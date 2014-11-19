@@ -19,13 +19,53 @@ function onOpen() {
       functionName: "notifyUsers"
     },
     {
+      name: "Deactivate Accounts",
+      functionName: "deactivateAccount"
+    },
+    {
       name: "Delete Accounts",
       functionName: "deleteInactiveAccounts"
     },
   ];
   var ss = SpreadsheetApp.getActiveSpreadsheet();
-  ss.addMenu("Inactive Accounts", menuEntries);
+  ss.addMenu("Bulk Account Cleaner", menuEntries);
 
+}
+
+function deactivateAccount(userKey){
+
+var ui = SpreadsheetApp.getUi();
+  var ss = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  var startRow = 2;
+  var update={ suspended: true};
+  //skip the header row, get values from all the rows and columns
+  var users = ss.getRange(startRow, 1, ss.getLastRow() - 1, ss.getLastColumn()).getValues();
+  if (users.length > 0) {
+    var response = ui.alert('CONFIRM ACTION', 'Are you sure you want deactivate/suspend ' + users.length + ' users?', ui.ButtonSet.YES_NO);
+    if (response == ui.Button.YES) {
+      //loop and delete
+      users.forEach(function(user) {
+        //delete the account 
+        Logger.log(user[1]);
+        var r = rateLimitExpBackoff(function() {
+           return AdminDirectory.Users.update(update, user[1]);
+         });
+        
+      });
+      ui.alert(users.length + ' users have been deactivated/suspended from your domain');
+      
+      ss.clear();
+    } else {
+      //do nothing
+      Logger.log('do nuttin!');
+    }
+
+  } else {
+    Logger.log('No users to deactivate/suspend');
+    ui.alert('No users to deactivate/suspend');
+  }
+   
+   
 }
     
 
